@@ -40,16 +40,16 @@ export function MobileMenu() {
       {/* Hamburger toggle */}
       <button
         onClick={toggle}
-        className="relative z-50 grid size-10 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-slate-200 transition hover:border-cyan-300/40 hover:text-white md:hidden"
+        className="relative z-50 grid size-8 place-items-center rounded-full border border-white/10 bg-white/[0.06] text-white/70 transition hover:bg-white/[0.12] hover:text-white md:hidden"
         aria-label={open ? "Close menu" : "Open menu"}
         aria-expanded={open}
       >
-        {open ? <X className="size-5" /> : <Menu className="size-5" />}
+        {open ? <X className="size-4" /> : <Menu className="size-4" />}
       </button>
 
       {/* Full-screen overlay */}
       {open ? (
-        <div className="fixed inset-0 z-40 flex flex-col bg-slate-950/95 backdrop-blur-2xl md:hidden">
+        <div className="fixed inset-0 z-40 flex flex-col bg-black/95 backdrop-blur-2xl md:hidden">
           {/* Nav links */}
           <nav className="flex flex-1 flex-col items-center justify-center gap-2">
             {navItems.map((item, index) => (
@@ -57,7 +57,7 @@ export function MobileMenu() {
                 key={item.href}
                 href={item.href}
                 onClick={close}
-                className="animate-fade-slide-up rounded-2xl px-8 py-4 text-2xl font-semibold text-slate-100 transition hover:bg-white/[0.06] hover:text-cyan-200"
+                className="animate-fade-slide-up rounded-full px-8 py-4 text-2xl font-semibold text-white/80 transition hover:bg-white/[0.06] hover:text-white"
                 style={{ animationDelay: `${0.05 + index * 0.06}s` }}
               >
                 {item.label}
@@ -70,7 +70,7 @@ export function MobileMenu() {
             <Link
               href="#contact"
               onClick={close}
-              className="block rounded-full border border-violet-300/40 bg-violet-400/10 px-6 py-4 text-center text-base font-semibold text-violet-100 transition hover:border-cyan-300/60 hover:text-cyan-100"
+              className="block rounded-full bg-white text-black px-6 py-4 text-center text-base font-semibold transition hover:bg-white/90"
             >
               Let&apos;s talk
             </Link>

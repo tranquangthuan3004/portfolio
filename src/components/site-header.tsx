@@ -11,47 +11,55 @@ const navItems = [
   { label: "Contact", href: "#contact" },
 ];
 
+/**
+ * Floating pill navbar — centered at the top of the viewport.
+ * rounded-full, backdrop-blur-md, bg-white/5, border-white/10.
+ * Logo left · Nav links center · CTA right.
+ * On mobile: collapses to logo + hamburger.
+ */
 export function SiteHeader() {
   return (
-    <header className="animate-slide-down fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-slate-950/70 backdrop-blur-xl">
-      <nav className="mx-auto max-w-7xl px-5 py-3 sm:px-8 lg:px-10">
-        <div className="flex items-center justify-between gap-4">
-          {/* Logo */}
-          <Link href="#hero" className="flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-xl border border-cyan-300/40 bg-cyan-300/10 text-sm font-black text-cyan-200 shadow-[0_0_28px_rgba(103,232,249,0.2)]">
-              PZ
-            </span>
-            <span className="text-lg font-bold tracking-tight text-white">
-              PhoenixZ
-            </span>
-          </Link>
+    <header
+      className="animate-slide-down fixed top-5 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2.5rem)] max-w-3xl"
+      style={{ animationDelay: "0.2s" }}
+    >
+      <nav className="flex items-center gap-6 rounded-full border border-white/10 backdrop-blur-md bg-white/5 px-5 py-2.5 shadow-lg shadow-black/20">
+        {/* Logo */}
+        <Link href="#hero" className="flex items-center gap-2 shrink-0">
+          <span className="grid size-8 place-items-center rounded-full border border-white/15 bg-white/10 text-xs font-black text-white">
+            PZ
+          </span>
+          <span className="text-sm font-bold tracking-tight text-white hidden sm:block">
+            PhoenixZ
+          </span>
+        </Link>
 
-          {/* Desktop nav — glassy pill */}
-          <div className="hidden items-center gap-0.5 rounded-full border border-white/[0.08] bg-white/[0.05] p-1 shadow-[0_4px_30px_rgba(0,0,0,0.2)] backdrop-blur-2xl md:flex">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-full px-4 py-2 text-sm font-medium text-slate-300 transition duration-200 hover:bg-white/[0.08] hover:text-white"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-3">
-            {/* Desktop CTA */}
+        {/* Desktop nav links — center */}
+        <div className="hidden md:flex items-center gap-1 flex-1 justify-center">
+          {navItems.map((item) => (
             <Link
-              href="#contact"
-              className="hidden rounded-full border border-violet-300/40 bg-violet-400/10 px-4 py-2 text-sm font-semibold text-violet-100 transition hover:border-cyan-300/60 hover:text-cyan-100 md:block"
+              key={item.href}
+              href={item.href}
+              className="rounded-full px-3.5 py-1.5 text-sm font-medium text-white/60 transition duration-200 hover:bg-white/[0.08] hover:text-white"
             >
-              Let&apos;s talk
+              {item.label}
             </Link>
-
-            {/* Mobile hamburger menu */}
-            <MobileMenu />
-          </div>
+          ))}
         </div>
+
+        {/* Spacer for mobile */}
+        <div className="flex-1 md:hidden" />
+
+        {/* Desktop CTA */}
+        <Link
+          href="#contact"
+          className="hidden md:block rounded-full bg-white text-black text-sm font-medium px-4 py-1.5 transition duration-200 hover:bg-white/90 shrink-0"
+        >
+          Let&apos;s talk
+        </Link>
+
+        {/* Mobile hamburger */}
+        <MobileMenu />
       </nav>
     </header>
   );
