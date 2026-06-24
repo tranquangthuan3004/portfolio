@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { MouseGlow } from "@/components/mouse-glow";
 import { HeroContent } from "@/components/hero/hero-content";
-import { GridBackground } from "@/components/hero/grid-background";
+import { GridBackground, BackgroundVibe } from "@/components/hero/grid-background";
 
 /**
  * Cinematic hero section orchestrator.
@@ -10,13 +11,15 @@ import { GridBackground } from "@/components/hero/grid-background";
  * Content is centered.
  */
 export function HeroSection() {
+  const [vibe, setVibe] = useState<BackgroundVibe>("grid");
+
   return (
     <section
       id="hero"
-      className="relative min-h-screen w-full overflow-hidden bg-[#050508] text-white"
+      className="relative min-h-screen w-full overflow-hidden bg-[#03030f] text-white"
     >
       {/* Z-0: Dynamic Canvas-based Grid Background */}
-      <GridBackground />
+      <GridBackground vibe={vibe} />
 
       {/* Z-10: Interactive mouse glow */}
       <MouseGlow />
@@ -37,7 +40,28 @@ export function HeroSection() {
         </span>
         <div className="animate-scroll-bounce h-6 w-px bg-gradient-to-b from-white/40 to-transparent" />
       </div>
+
+      {/* Z-30: Floating Vibe Controller at bottom right */}
+      <div 
+        className="animate-fade-in absolute bottom-4 right-4 z-30 flex items-center gap-1 rounded-full border border-white/10 bg-black/40 p-1 backdrop-blur-md md:bottom-6 md:right-6"
+        style={{ animationDelay: "2.4s" }}
+      >
+        {(["grid", "wave", "tunnel", "rain"] as BackgroundVibe[]).map((v) => (
+          <button
+            key={v}
+            onClick={() => setVibe(v)}
+            className={`rounded-full px-3.5 py-1.5 text-[10px] md:text-[11px] font-semibold uppercase tracking-[0.08em] transition-all duration-300 ${
+              vibe === v
+                ? "bg-white/15 text-white shadow-sm border border-white/20"
+                : "text-white/40 border border-transparent hover:bg-white/5 hover:text-white/70"
+            }`}
+          >
+            {v}
+          </button>
+        ))}
+      </div>
     </section>
   );
 }
+
 

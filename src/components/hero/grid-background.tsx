@@ -2,8 +2,27 @@
 
 import { useEffect, useRef } from "react";
 
-export function GridBackground() {
+export type BackgroundVibe = "grid" | "wave" | "tunnel" | "rain";
+
+interface GridBackgroundProps {
+  vibe?: BackgroundVibe;
+}
+
+export function GridBackground({ vibe = "grid" }: GridBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const vibeRef = useRef<BackgroundVibe>(vibe);
+  const prevVibeRef = useRef<BackgroundVibe>(vibe);
+  const transitionFrameRef = useRef<number>(0);
+
+  // Sync prop to ref immediately so animation loop can read the latest value
+  // without rebuilding the useEffect or resetting animation frames
+  useEffect(() => {
+    if (vibeRef.current !== vibe) {
+      prevVibeRef.current = vibeRef.current;
+      vibeRef.current = vibe;
+      transitionFrameRef.current = 1;
+    }
+  }, [vibe]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -17,252 +36,324 @@ export function GridBackground() {
     canvas.width = W;
     canvas.height = H;
 
-    const mode = "grid"; // Run "grid" mode as background
-    let t = 0;
-    const LOOP = 720;
+    let frame = 0;
+    const LOOP = 780;
 
-    const PALETTE = {
-      bg: "#050508",
-      gridBase: "rgba(60,70,110,",
-      gridAcc: "rgba(100,120,200,",
-      glowCol: "rgba(80,100,180,",
-      particle: "rgba(140,160,255,",
-      scan: "rgba(120,140,220,",
-      vignette: "rgba(0,0,8,",
-    };
+    // ── shared helpers ──
+    const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-    // Particles setup
-    const PCOUNT = 80;
-    const particles = Array.from({ length: PCOUNT }, () => ({
+    // ── particles shared ──
+    const pts = Array.from({ length: 100 }, () => ({
       x: Math.random() * W,
       y: Math.random() * H,
-      z: Math.random() * 0.8 + 0.1,
-      vx: (Math.random() - 0.5) * 0.25,
-      vy: -Math.random() * 0.3 - 0.05,
-      r: Math.random() * 1.4 + 0.4,
-      phase: Math.random() * Math.PI * 2,
-      blink: Math.random() > 0.6,
+      vx: (Math.random() - 0.5) * 0.6,
+      vy: -Math.random() * 0.5 - 0.1,
+      r: 0.6 + Math.random() * 1.8,
+      a: 0.2 + Math.random() * 0.6,
     }));
 
-    function drawGrid(tVal: number) {
-      if (!ctx) return;
-      const SPEED = tVal / LOOP;
-      const vp = { x: W / 2, y: H * 0.42 };
-      const COLS = 24;
-      const ROWS = 20;
-      const GW = W * 1.6;
-      const GH = H * 1.2;
-      const HORIZON = H * 0.42;
-      const FLOOR = H + 60;
-      const offset = (SPEED % 1) * (GH / ROWS);
-
-      ctx.save();
-
-      // Horizontal lines
-      for (let r = 0; r <= ROWS + 2; r++) {
-        const yBase = HORIZON + (r / ROWS) * (FLOOR - HORIZON) - offset;
-        if (yBase < HORIZON || yBase > FLOOR + 10) continue;
-        const prog = (yBase - HORIZON) / (FLOOR - HORIZON);
-        const alpha = Math.pow(prog, 1.2) * 0.55;
-        const isAcc = r % 4 === 0;
-        ctx.beginPath();
-        const xL = vp.x - (GW / 2) * prog;
-        const xR = vp.x + (GW / 2) * prog;
-        ctx.moveTo(xL, yBase);
-        ctx.lineTo(xR, yBase);
-        ctx.strokeStyle = isAcc
-          ? PALETTE.gridAcc + (alpha * 1.4).toFixed(3) + ")"
-          : PALETTE.gridBase + alpha.toFixed(3) + ")";
-        ctx.lineWidth = isAcc ? 0.8 : 0.4;
-        ctx.stroke();
-      }
-
-      // Vertical perspective lines
-      for (let c = 0; c <= COLS; c++) {
-        const frac = c / COLS;
-        const xTop = vp.x + (frac - 0.5) * GW * 0.05;
-        const xBot = vp.x + (frac - 0.5) * GW;
-        const isAcc = c % 6 === 0;
-        const alpha = isAcc ? 0.45 : 0.22;
-        ctx.beginPath();
-        ctx.moveTo(xTop, HORIZON);
-        ctx.lineTo(xBot, FLOOR + 60);
-        ctx.strokeStyle = isAcc
-          ? PALETTE.gridAcc + alpha + ")"
-          : PALETTE.gridBase + alpha + ")";
-        ctx.lineWidth = isAcc ? 0.7 : 0.3;
-        ctx.stroke();
-      }
-
-      ctx.restore();
-    }
-
-    function drawHex(tVal: number) {
-      if (!ctx) return;
-      const SPEED = tVal / LOOP;
-      const SIZE = 58;
-      const COLS = 36;
-      const ROWS = 18;
-      const driftX = Math.sin(SPEED * Math.PI * 2) * 12;
-      const driftY = (SPEED % 1) * SIZE * 2.1;
-      
-      ctx.save();
-      for (let r = -1; r < ROWS + 2; r++) {
-        for (let c = -1; c < COLS + 2; c++) {
-          const ox = r % 2 === 0 ? 0 : (SIZE * Math.sqrt(3)) / 2;
-          const cx2 = c * SIZE * Math.sqrt(3) + ox + driftX - SIZE * 2;
-          const cy2 = r * SIZE * 1.5 + (driftY % (SIZE * 3)) - SIZE;
-          const distC = Math.abs(cx2 - W / 2) / W;
-          const distR = Math.abs(cy2 - H / 2) / H;
-          const dist = Math.sqrt(distC * distC + distR * distR);
-          const alpha = Math.max(0, 0.35 - dist * 0.9);
-          if (alpha < 0.01) continue;
-
-          ctx.beginPath();
-          for (let i = 0; i < 6; i++) {
-            const a = (Math.PI / 3) * i - Math.PI / 6;
-            const px = cx2 + (SIZE - 2) * Math.cos(a);
-            const py = cy2 + (SIZE - 2) * Math.sin(a);
-            if (i === 0) ctx.moveTo(px, py);
-            else ctx.lineTo(px, py);
-          }
-          ctx.closePath();
-          ctx.strokeStyle = PALETTE.gridAcc + alpha.toFixed(3) + ")";
-          ctx.lineWidth = 0.5;
-          ctx.stroke();
-        }
-      }
-      ctx.restore();
-    }
-
-    function drawDots(tVal: number) {
-      if (!ctx) return;
-      const SPEED = tVal / LOOP;
-      const COLS = 48;
-      const ROWS = 27;
-      const CW = W / COLS;
-      const CH = H / ROWS;
-      const driftX = (SPEED % 1) * CW;
-      const driftY = (SPEED % 1) * CH;
-
-      ctx.save();
-      for (let r = -1; r < ROWS + 2; r++) {
-        for (let c = -1; c < COLS + 2; c++) {
-          const px = c * CW + driftX;
-          const py = r * CH + driftY;
-          const distX = Math.abs(px - W / 2) / (W / 2);
-          const distY = Math.abs(py - H / 2) / (H / 2);
-          const dist = Math.sqrt(distX * distX + distY * distY);
-          const pulse = 0.5 + 0.5 * Math.sin(SPEED * Math.PI * 2 - dist * 4);
-          const alpha = pulse * Math.max(0, 0.5 - dist * 0.35);
-          if (alpha < 0.01) continue;
-
-          const r2 = 1.2 + pulse * 0.8;
-          ctx.beginPath();
-          ctx.arc(px, py, r2, 0, Math.PI * 2);
-          ctx.fillStyle = PALETTE.gridAcc + alpha.toFixed(3) + ")";
-          ctx.fill();
-        }
-      }
-      ctx.restore();
-    }
-
-    function drawParticles(tVal: number) {
-      if (!ctx) return;
-      const speed = tVal / LOOP;
-      particles.forEach((p) => {
+    function drawPts(cx: CanvasRenderingContext2D) {
+      pts.forEach((p) => {
         p.x += p.vx;
-        p.y += p.vy * (0.6 + p.z * 0.4);
-        if (p.y < -10) {
-          p.y = H + 10;
+        p.y += p.vy;
+        if (p.y < -4) {
+          p.y = H + 4;
           p.x = Math.random() * W;
         }
-        if (p.x < -10) p.x = W + 10;
-        if (p.x > W + 10) p.x = -10;
-
-        const bAlpha = p.blink
-          ? 0.3 + 0.7 * Math.abs(Math.sin(speed * Math.PI * 4 + p.phase))
-          : 0.4 + 0.5 * p.z;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r * p.z, 0, Math.PI * 2);
-        ctx.fillStyle = PALETTE.particle + (bAlpha * p.z).toFixed(3) + ")";
-        ctx.fill();
+        if (p.x < -4) p.x = W + 4;
+        if (p.x > W + 4) p.x = -4;
+        cx.beginPath();
+        cx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        cx.fillStyle = `rgba(160,190,255,${p.a})`;
+        cx.fill();
       });
     }
 
-    function drawScan(tVal: number) {
-      if (!ctx) return;
-      const yS = ((tVal / LOOP) % 1) * (H + 200) - 100;
-      const grad = ctx.createLinearGradient(0, yS - 80, 0, yS + 80);
-      grad.addColorStop(0, PALETTE.scan + "0)");
-      grad.addColorStop(0.4, PALETTE.scan + "0.03)");
-      grad.addColorStop(0.5, PALETTE.scan + "0.08)");
-      grad.addColorStop(0.6, PALETTE.scan + "0.03)");
-      grad.addColorStop(1, PALETTE.scan + "0)");
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, yS - 80, W, 160);
+    // ── rain drops ──
+    const drops = Array.from({ length: 200 }, () => ({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      len: 40 + Math.random() * 120,
+      speed: 8 + Math.random() * 14,
+      alpha: 0.15 + Math.random() * 0.55,
+      width: 0.5 + Math.random() * 1.2,
+    }));
+
+    function drawRain(cx: CanvasRenderingContext2D) {
+      drops.forEach((d) => {
+        d.y += d.speed;
+        if (d.y > H + d.len) {
+          d.y = -d.len;
+          d.x = Math.random() * W;
+        }
+        const g = cx.createLinearGradient(d.x, d.y - d.len, d.x, d.y);
+        g.addColorStop(0, `rgba(100,160,255,0)`);
+        g.addColorStop(0.6, `rgba(120,180,255,${d.alpha * 0.6})`);
+        g.addColorStop(1, `rgba(160,210,255,${d.alpha})`);
+        cx.beginPath();
+        cx.moveTo(d.x, d.y - d.len);
+        cx.lineTo(d.x, d.y);
+        cx.strokeStyle = g;
+        cx.lineWidth = d.width;
+        cx.stroke();
+      });
+      // floor splash glow
+      const fg = cx.createLinearGradient(0, H * 0.7, 0, H);
+      fg.addColorStop(0, "rgba(60,100,200,0)");
+      fg.addColorStop(1, "rgba(60,100,200,0.15)");
+      cx.fillStyle = fg;
+      cx.fillRect(0, H * 0.7, W, H * 0.3);
     }
 
-    function drawGlow(tVal: number) {
-      if (!ctx) return;
-      const pulse = 0.85 + 0.15 * Math.sin((tVal / LOOP) * Math.PI * 2);
-      const r = W * 0.35 * pulse;
-      const cx2 = W / 2, cy2 = H * 0.42;
-      const grad = ctx.createRadialGradient(cx2, cy2, 0, cx2, cy2, r);
-      grad.addColorStop(0, PALETTE.glowCol + "0.09)");
-      grad.addColorStop(0.5, PALETTE.glowCol + "0.04)");
-      grad.addColorStop(1, PALETTE.glowCol + "0)");
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, W, H);
-    }
+    // ── GRID MODE ──
+    function drawGrid(cx: CanvasRenderingContext2D) {
+      const progress = (frame % LOOP) / LOOP;
+      const oy = progress; // 0→1 vertical scroll offset
 
-    function drawVignette() {
-      if (!ctx) return;
-      const grad = ctx.createRadialGradient(
-        W / 2,
-        H / 2,
-        H * 0.2,
-        W / 2,
-        H / 2,
-        W * 0.8
-      );
-      grad.addColorStop(0, PALETTE.vignette + "0)");
-      grad.addColorStop(1, PALETTE.vignette + "0.75)");
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, W, H);
-    }
+      // horizon point
+      const hx = W / 2;
+      const hy = H * 0.48;
+      const GCOLS = 20;
+      const GROWS = 30;
+      const floorY = H + 100;
 
-    function drawNoise() {
-      if (!ctx) return;
-      ctx.save();
-      ctx.globalAlpha = 0.022;
-      for (let i = 0; i < 1200; i++) {
-        const x = Math.random() * W;
-        const y = Math.random() * H;
-        const s = Math.random() * 1.5;
-        ctx.fillStyle = `rgba(255,255,255,${Math.random()})`;
-        ctx.fillRect(x, y, s, s);
+      // vertical lines
+      for (let c = 0; c <= GCOLS; c++) {
+        const frac = c / GCOLS; // 0..1
+        const xTop = lerp(hx - 0.5, hx + 0.5, frac); // converge to horizon
+        const xBot = lerp(-W * 0.3, W * 1.3, frac);
+        const isMajor = c % 5 === 0;
+        const alpha = isMajor ? 0.7 : 0.28;
+        const g = cx.createLinearGradient(xTop, hy, xBot, floorY);
+        g.addColorStop(0, `rgba(80,120,255,0)`);
+        g.addColorStop(0.15, `rgba(80,130,255,${alpha * 0.6})`);
+        g.addColorStop(0.6, `rgba(100,150,255,${alpha})`);
+        g.addColorStop(1, `rgba(120,160,255,${alpha * 0.3})`);
+        cx.beginPath();
+        cx.moveTo(xTop, hy);
+        cx.lineTo(xBot, floorY);
+        cx.strokeStyle = g;
+        cx.lineWidth = isMajor ? 1.2 : 0.5;
+        cx.stroke();
       }
-      ctx.globalAlpha = 1;
-      ctx.restore();
+
+      // horizontal lines — scroll upward
+      for (let r = 0; r < GROWS + 2; r++) {
+        const rawT = (r / GROWS + oy) % 1; // 0..1 with wrap
+        // perspective: rawT=0 → horizon, rawT=1 → floor
+        const pt = Math.pow(rawT, 1.6); // ease perspective
+        const y = lerp(hy, floorY, pt);
+        const xL = lerp(hx, -W * 0.3, pt);
+        const xR = lerp(hx, W * 1.3, pt);
+        const isMajor =
+          Math.round((r + Math.floor((frame / LOOP) * GROWS)) % 5) === 0;
+        const alpha = pt * (isMajor ? 0.75 : 0.3);
+        const g = cx.createLinearGradient(xL, y, xR, y);
+        g.addColorStop(0, `rgba(80,130,255,0)`);
+        g.addColorStop(0.15, `rgba(80,140,255,${alpha})`);
+        g.addColorStop(0.5, `rgba(110,160,255,${alpha * 1.1})`);
+        g.addColorStop(0.85, `rgba(80,140,255,${alpha})`);
+        g.addColorStop(1, `rgba(80,130,255,0)`);
+        cx.beginPath();
+        cx.moveTo(xL, y);
+        cx.lineTo(xR, y);
+        cx.strokeStyle = g;
+        cx.lineWidth = isMajor ? 1.0 : 0.45;
+        cx.stroke();
+      }
+
+      // horizon glow line
+      const hg = cx.createLinearGradient(0, hy, W, hy);
+      hg.addColorStop(0, "rgba(80,140,255,0)");
+      hg.addColorStop(0.3, "rgba(100,160,255,0.6)");
+      hg.addColorStop(0.5, "rgba(140,180,255,0.9)");
+      hg.addColorStop(0.7, "rgba(100,160,255,0.6)");
+      hg.addColorStop(1, "rgba(80,140,255,0)");
+      cx.beginPath();
+      cx.moveTo(0, hy);
+      cx.lineTo(W, hy);
+      cx.strokeStyle = hg;
+      cx.lineWidth = 2;
+      cx.stroke();
+
+      // glow orb at horizon
+      const pulse = 0.8 + 0.2 * Math.sin(frame * 0.04);
+      const og = cx.createRadialGradient(hx, hy, 0, hx, hy, W * 0.5 * pulse);
+      og.addColorStop(0, "rgba(60,100,255,0.22)");
+      og.addColorStop(0.3, "rgba(40,80,200,0.10)");
+      og.addColorStop(0.7, "rgba(20,40,140,0.04)");
+      og.addColorStop(1, "rgba(0,0,0,0)");
+      cx.fillStyle = og;
+      cx.fillRect(0, 0, W, H);
     }
 
+    // ── WAVE MODE ──
+    function drawWave(cx: CanvasRenderingContext2D) {
+      const t = frame / LOOP;
+      const LINES = 50;
+      for (let l = 0; l < LINES; l++) {
+        const yBase = (l / LINES) * H;
+        const amp = 60 + 40 * Math.sin(l * 0.3);
+        const freq = 2.5 + l * 0.05;
+        const phase = t * Math.PI * 2 * (0.5 + l * 0.03) + l * 0.4;
+        const alpha = 0.15 + 0.4 * Math.pow(Math.sin((l / LINES) * Math.PI), 2);
+        cx.beginPath();
+        for (let x = 0; x <= W; x += 4) {
+          const y =
+            yBase +
+            amp * Math.sin(freq * (x / W) * Math.PI * 2 + phase) +
+            20 * Math.sin(freq * 2.3 * (x / W) * Math.PI * 2 + phase * 1.7);
+          x === 0 ? cx.moveTo(x, y) : cx.lineTo(x, y);
+        }
+        const hue = 220 + l * 1.5;
+        cx.strokeStyle = `hsla(${hue},80%,65%,${alpha})`;
+        cx.lineWidth = 0.8;
+        cx.stroke();
+      }
+      // center glow
+      const cg = cx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, W * 0.6);
+      cg.addColorStop(0, "rgba(80,100,255,0.12)");
+      cg.addColorStop(1, "rgba(0,0,0,0)");
+      cx.fillStyle = cg;
+      cx.fillRect(0, 0, W, H);
+    }
+
+    // ── TUNNEL MODE ──
+    function drawTunnel(cx: CanvasRenderingContext2D) {
+      const t = (frame % LOOP) / LOOP;
+      const cx2 = W / 2;
+      const cy2 = H / 2;
+      const RINGS = 30;
+      const SPOKES = 16;
+
+      for (let r = RINGS; r >= 0; r--) {
+        const tOff = (r / RINGS + t) % 1;
+        const radius = Math.pow(tOff, 0.7) * Math.min(W, H) * 0.85;
+        if (radius < 2) continue;
+        const alpha = tOff * 0.6;
+        const isMajor = r % 5 === 0;
+        cx.beginPath();
+        cx.arc(cx2, cy2, radius, 0, Math.PI * 2);
+        cx.strokeStyle = isMajor
+          ? `rgba(100,160,255,${alpha * 1.3})`
+          : `rgba(60,100,200,${alpha * 0.5})`;
+        cx.lineWidth = isMajor ? 1.2 : 0.4;
+        cx.stroke();
+      }
+      for (let s = 0; s < SPOKES; s++) {
+        const angle = (s / SPOKES) * Math.PI * 2 + t * Math.PI * 0.5;
+        const innerR = 30;
+        const outerR = Math.min(W, H) * 0.85;
+        const sg = cx.createLinearGradient(
+          cx2 + innerR * Math.cos(angle),
+          cy2 + innerR * Math.sin(angle),
+          cx2 + outerR * Math.cos(angle),
+          cy2 + outerR * Math.sin(angle)
+        );
+        sg.addColorStop(0, "rgba(120,170,255,0)");
+        sg.addColorStop(0.3, "rgba(100,150,255,0.35)");
+        sg.addColorStop(1, "rgba(60,100,200,0)");
+        cx.beginPath();
+        cx.moveTo(cx2 + innerR * Math.cos(angle), cy2 + innerR * Math.sin(angle));
+        cx.lineTo(cx2 + outerR * Math.cos(angle), cy2 + outerR * Math.sin(angle));
+        cx.strokeStyle = sg;
+        cx.lineWidth = 0.6;
+        cx.stroke();
+      }
+      // core glow
+      const core = cx.createRadialGradient(cx2, cy2, 0, cx2, cy2, 120);
+      core.addColorStop(0, "rgba(140,180,255,0.4)");
+      core.addColorStop(0.4, "rgba(80,120,255,0.12)");
+      core.addColorStop(1, "rgba(0,0,0,0)");
+      cx.fillStyle = core;
+      cx.fillRect(0, 0, W, H);
+    }
+
+    // ── scan line ──
+    function drawScan(cx: CanvasRenderingContext2D) {
+      const sy = ((frame % LOOP) / LOOP) * (H + 300) - 150;
+      const sg = cx.createLinearGradient(0, sy - 100, 0, sy + 100);
+      sg.addColorStop(0, "rgba(120,160,255,0)");
+      sg.addColorStop(0.35, "rgba(120,160,255,0.04)");
+      sg.addColorStop(0.5, "rgba(160,200,255,0.13)");
+      sg.addColorStop(0.65, "rgba(120,160,255,0.04)");
+      sg.addColorStop(1, "rgba(120,160,255,0)");
+      cx.fillStyle = sg;
+      cx.fillRect(0, sy - 100, W, 200);
+    }
+
+    // ── vignette ──
+    function drawVig(cx: CanvasRenderingContext2D) {
+      const vg = cx.createRadialGradient(
+        W / 2,
+        H / 2,
+        H * 0.15,
+        W / 2,
+        H / 2,
+        W * 0.85
+      );
+      vg.addColorStop(0, "rgba(0,0,12,0)");
+      vg.addColorStop(1, "rgba(0,0,12,0.88)");
+      cx.fillStyle = vg;
+      cx.fillRect(0, 0, W, H);
+    }
+
+    // ── RENDER ──
     function render() {
       if (!ctx) return;
-      ctx.fillStyle = PALETTE.bg;
+      ctx.fillStyle = "#03030f";
       ctx.fillRect(0, 0, W, H);
 
-      drawGlow(t);
-      if (mode === "grid") drawGrid(t);
-      else if (mode === "hex") drawHex(t);
-      else if (mode === "dots") drawDots(t);
+      const activeVibe = vibeRef.current;
+      const prevVibe = prevVibeRef.current;
+      const tFrame = transitionFrameRef.current;
+      const transitionDuration = 45; // ~0.75s transition at 60fps
 
-      drawParticles(t);
-      drawScan(t);
-      drawNoise();
-      drawVignette();
+      if (tFrame > 0) {
+        const progress = tFrame / transitionDuration;
+        // Cubic ease in-out
+        const eased = progress < 0.5 
+          ? 4 * progress * progress * progress 
+          : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 
-      t = (t + 1) % LOOP;
+        // Draw previous mode fading out
+        ctx.save();
+        ctx.globalAlpha = 1 - eased;
+        if (prevVibe === "grid") drawGrid(ctx);
+        else if (prevVibe === "wave") drawWave(ctx);
+        else if (prevVibe === "tunnel") drawTunnel(ctx);
+        else if (prevVibe === "rain") drawRain(ctx);
+        ctx.restore();
+
+        // Draw current (new) mode fading in
+        ctx.save();
+        ctx.globalAlpha = eased;
+        if (activeVibe === "grid") drawGrid(ctx);
+        else if (activeVibe === "wave") drawWave(ctx);
+        else if (activeVibe === "tunnel") drawTunnel(ctx);
+        else if (activeVibe === "rain") drawRain(ctx);
+        ctx.restore();
+
+        transitionFrameRef.current += 1;
+        if (transitionFrameRef.current > transitionDuration) {
+          transitionFrameRef.current = 0;
+          prevVibeRef.current = activeVibe;
+        }
+      } else {
+        ctx.save();
+        ctx.globalAlpha = 1;
+        if (activeVibe === "grid") drawGrid(ctx);
+        else if (activeVibe === "wave") drawWave(ctx);
+        else if (activeVibe === "tunnel") drawTunnel(ctx);
+        else if (activeVibe === "rain") drawRain(ctx);
+        ctx.restore();
+      }
+
+      drawPts(ctx);
+      drawScan(ctx);
+      drawVig(ctx);
+
+      frame++;
     }
 
     let rafId: number;
@@ -280,7 +371,7 @@ export function GridBackground() {
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 h-full w-full object-cover pointer-events-none opacity-85"
+      className="absolute inset-0 h-full w-full object-cover pointer-events-none opacity-85 transition-opacity duration-1000"
     />
   );
 }
