@@ -4,30 +4,16 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { AnimatedText, FadeIn } from "@/components/animated-text";
 
-const heroBadges = [
-  "Internship ready",
-  "React / Next.js",
-  "UI Motion",
-  "AI-assisted workflow",
-];
-
 /**
- * Hero content block — bottom-left aligned.
- * Contains: eyebrow → headline → sub-copy → CTAs → badges.
+ * Hero content block — centered.
+ * Contains: headline → sub-copy → CTAs.
  * All animations follow the cinematic timeline from the spec.
  */
 export function HeroContent() {
   return (
-    <div className="flex flex-col items-start gap-4 max-w-3xl">
-      {/* Eyebrow label — t=0.3s */}
-      <FadeIn delay={0.3}>
-        <p className="text-xs tracking-widest uppercase text-white/50 font-normal">
-          Frontend Developer / FPT Software Engineering Student
-        </p>
-      </FadeIn>
-
+    <div className="flex flex-col items-center justify-center text-center gap-6 max-w-4xl">
       {/* Main headline — t=0.4s, word-by-word stagger */}
-      <h1 className="text-[40px] sm:text-[56px] lg:text-[72px] xl:text-[80px] font-bold leading-[1.05] tracking-tight text-white">
+      <h1 className="text-[40px] sm:text-[56px] lg:text-[72px] xl:text-[80px] font-bold leading-[1.1] tracking-tight text-white">
         <AnimatedText
           text="Building polished"
           as="span"
@@ -55,18 +41,18 @@ export function HeroContent() {
       </h1>
 
       {/* Sub-copy — t=1.4s, word-by-word stagger */}
-      <div className="max-w-lg">
+      <div className="max-w-2xl mx-auto">
         <AnimatedText
           text="I design and build responsive landing pages, portfolio websites, and interactive web interfaces — focused on clean structure, smooth motion, and practical product thinking."
           as="p"
-          className="text-[15px] text-white/60 font-light leading-relaxed"
+          className="text-[15px] sm:text-[17px] text-white/60 font-light leading-relaxed"
           baseDelay={1.4}
           stagger={0.03}
         />
       </div>
 
       {/* CTA row — t=2.4s */}
-      <FadeIn delay={2.4} className="flex items-center gap-5 mt-2">
+      <FadeIn delay={2.4} className="flex items-center justify-center gap-5 mt-2">
         <Link
           href="#work"
           className="inline-flex items-center gap-2 rounded-full bg-white text-black text-sm font-medium px-6 py-2.5 transition duration-300 hover:bg-white/90 hover:-translate-y-0.5"
@@ -81,19 +67,7 @@ export function HeroContent() {
           Contact Me →
         </Link>
       </FadeIn>
-
-      {/* Badge pills — t=2.7s, stagger 0.08s */}
-      <div className="flex flex-wrap gap-2 mt-2">
-        {heroBadges.map((badge, index) => (
-          <span
-            key={badge}
-            className="animate-fade-in rounded-full border border-white/10 bg-white/5 text-white/50 text-xs px-3 py-1"
-            style={{ animationDelay: `${2.7 + index * 0.08}s` }}
-          >
-            {badge}
-          </span>
-        ))}
-      </div>
     </div>
   );
 }
+

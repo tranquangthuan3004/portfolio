@@ -1,0 +1,345 @@
+
+<style>
+  body { margin: 0; background: #000; }
+  canvas { display: block; }
+  #ui {
+    position: absolute; top: 16px; left: 16px; right: 16px;
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 12px; color: rgba(255,255,255,0.5);
+    pointer-events: none;
+  }
+  .pill {
+    background: rgba(255,255,255,0.06);
+    border: 0.5px solid rgba(255,255,255,0.12);
+    border-radius: 20px; padding: 5px 12px;
+    pointer-events: all; cursor: pointer;
+    transition: background 0.2s;
+    color: rgba(255,255,255,0.55);
+    font-size: 11px;
+  }
+  .pill:hover { background: rgba(255,255,255,0.12); }
+  .pill.active { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.9); }
+  #rec-btn {
+    background: rgba(220,50,50,0.15);
+    border: 0.5px solid rgba(220,50,50,0.4);
+    border-radius: 20px; padding: 5px 14px;
+    pointer-events: all; cursor: pointer;
+    color: rgba(220,80,80,0.9); font-size: 11px;
+    transition: background 0.2s;
+  }
+  #rec-btn:hover { background: rgba(220,50,50,0.25); }
+  #rec-btn.recording { background: rgba(220,50,50,0.35); color: #ff6060; }
+  #timer { font-size: 11px; color: rgba(255,255,255,0.35); min-width: 40px; }
+</style>
+
+<div style="position:relative; width:100%; min-height:480px; background:#000; overflow:hidden; border-radius:12px;">
+  <canvas id="c"></canvas>
+  <div id="ui">
+    <span style="color:rgba(255,255,255,0.25); font-size:10px; letter-spacing:0.08em; text-transform:uppercase;">Style</span>
+    <button class="pill active" data-mode="grid">Grid</button>
+    <button class="pill" data-mode="hex">Hex</button>
+    <button class="pill" data-mode="dots">Dots</button>
+    <span style="flex:1"></span>
+    <span id="timer">0s</span>
+    <button id="rec-btn">⏺ Record</button>
+  </div>
+</div>
+
+<div style="padding: 14px 4px 0; display:flex; gap:10px; flex-wrap:wrap; font-family:system-ui; font-size:12px; color:var(--color-text-secondary);">
+  <span>Canvas size: <strong style="color:var(--color-text-primary)">1920 × 1080</strong> (letterboxed above)</span>
+  <span>·</span>
+  <span>Record → WebM · convert to MP4 via <strong style="color:var(--color-text-primary)">HandBrake / ffmpeg</strong></span>
+  <span>·</span>
+  <span>Loop duration: <strong style="color:var(--color-text-primary)">~12s</strong></span>
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = 1920, H = 1080;
+canvas.width = W; canvas.height = H;
+
+const cont = canvas.parentElement;
+function resize() {
+  const cw = cont.clientWidth, ch = Math.max(480, cw * 9/16);
+  cont.style.height = ch + 'px';
+  canvas.style.width = cw + 'px';
+  canvas.style.height = ch + 'px';
+}
+resize();
+window.addEventListener('resize', resize);
+
+let mode = 'grid';
+let t = 0;
+const LOOP = 720;
+
+const PALETTE = {
+  bg:       '#050508',
+  gridBase: 'rgba(60,70,110,',
+  gridAcc:  'rgba(100,120,200,',
+  glowCol:  'rgba(80,100,180,',
+  particle: 'rgba(140,160,255,',
+  scan:     'rgba(120,140,220,',
+  vignette: 'rgba(0,0,8,',
+};
+
+// ── Particles ──
+const PCOUNT = 80;
+const particles = Array.from({length: PCOUNT}, (_, i) => ({
+  x: Math.random() * W,
+  y: Math.random() * H,
+  z: Math.random() * 0.8 + 0.1,
+  vx: (Math.random() - 0.5) * 0.25,
+  vy: -Math.random() * 0.3 - 0.05,
+  r: Math.random() * 1.4 + 0.4,
+  phase: Math.random() * Math.PI * 2,
+  blink: Math.random() > 0.6,
+}));
+
+// ── Grid perspective ──
+function drawGrid(t) {
+  const SPEED = t / LOOP;
+  const vp = { x: W / 2, y: H * 0.42 };
+  const COLS = 24, ROWS = 20;
+  const GW = W * 1.6, GH = H * 1.2;
+  const HORIZON = H * 0.42;
+  const FLOOR = H + 60;
+  const offset = (SPEED % 1) * (GH / ROWS);
+
+  ctx.save();
+
+  for (let r = 0; r <= ROWS + 2; r++) {
+    const yBase = HORIZON + (r / ROWS) * (FLOOR - HORIZON) - offset;
+    if (yBase < HORIZON || yBase > FLOOR + 10) continue;
+    const prog = (yBase - HORIZON) / (FLOOR - HORIZON);
+    const alpha = Math.pow(prog, 1.2) * 0.55;
+    const isAcc = r % 4 === 0;
+    ctx.beginPath();
+    const xL = vp.x - (GW / 2) * prog;
+    const xR = vp.x + (GW / 2) * prog;
+    ctx.moveTo(xL, yBase);
+    ctx.lineTo(xR, yBase);
+    ctx.strokeStyle = isAcc
+      ? PALETTE.gridAcc + (alpha * 1.4).toFixed(3) + ')'
+      : PALETTE.gridBase + alpha.toFixed(3) + ')';
+    ctx.lineWidth = isAcc ? 0.8 : 0.4;
+    ctx.stroke();
+  }
+
+  for (let c = 0; c <= COLS; c++) {
+    const frac = c / COLS;
+    const xTop = vp.x + (frac - 0.5) * GW * 0.05;
+    const xBot = vp.x + (frac - 0.5) * GW;
+    const isAcc = c % 6 === 0;
+    const alpha = isAcc ? 0.45 : 0.22;
+    ctx.beginPath();
+    ctx.moveTo(xTop, HORIZON);
+    ctx.lineTo(xBot, FLOOR + 60);
+    ctx.strokeStyle = isAcc
+      ? PALETTE.gridAcc + alpha + ')'
+      : PALETTE.gridBase + alpha + ')';
+    ctx.lineWidth = isAcc ? 0.7 : 0.3;
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function drawHex(t) {
+  const SPEED = t / LOOP;
+  const SIZE = 58, COLS = 36, ROWS = 18;
+  const driftX = Math.sin(SPEED * Math.PI * 2) * 12;
+  const driftY = (SPEED % 1) * SIZE * 2.1;
+  ctx.save();
+  for (let r = -1; r < ROWS + 2; r++) {
+    for (let c = -1; c < COLS + 2; c++) {
+      const ox = (r % 2 === 0 ? 0 : SIZE * Math.sqrt(3) / 2);
+      const cx2 = c * SIZE * Math.sqrt(3) + ox + driftX - SIZE * 2;
+      const cy2 = r * SIZE * 1.5 + (driftY % (SIZE * 3)) - SIZE;
+      const distC = Math.abs(cx2 - W / 2) / W;
+      const distR = Math.abs(cy2 - H / 2) / H;
+      const dist = Math.sqrt(distC * distC + distR * distR);
+      const alpha = Math.max(0, 0.35 - dist * 0.9);
+      if (alpha < 0.01) continue;
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (Math.PI / 3) * i - Math.PI / 6;
+        const px = cx2 + (SIZE - 2) * Math.cos(a);
+        const py = cy2 + (SIZE - 2) * Math.sin(a);
+        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = PALETTE.gridAcc + alpha.toFixed(3) + ')';
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawDots(t) {
+  const SPEED = t / LOOP;
+  const COLS = 48, ROWS = 27;
+  const CW = W / COLS, CH = H / ROWS;
+  const driftX = (SPEED % 1) * CW;
+  const driftY = (SPEED % 1) * CH;
+  ctx.save();
+  for (let r = -1; r < ROWS + 2; r++) {
+    for (let c = -1; c < COLS + 2; c++) {
+      const px = c * CW + driftX;
+      const py = r * CH + driftY;
+      const distX = Math.abs(px - W / 2) / (W / 2);
+      const distY = Math.abs(py - H / 2) / (H / 2);
+      const dist = Math.sqrt(distX * distX + distY * distY);
+      const pulse = 0.5 + 0.5 * Math.sin(SPEED * Math.PI * 2 - dist * 4);
+      const alpha = pulse * Math.max(0, 0.5 - dist * 0.35);
+      if (alpha < 0.01) continue;
+      const r2 = 1.2 + pulse * 0.8;
+      ctx.beginPath();
+      ctx.arc(px, py, r2, 0, Math.PI * 2);
+      ctx.fillStyle = PALETTE.gridAcc + alpha.toFixed(3) + ')';
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+}
+
+// ── Particles ──
+function drawParticles(t) {
+  const speed = t / LOOP;
+  particles.forEach(p => {
+    p.x += p.vx;
+    p.y += p.vy * (0.6 + p.z * 0.4);
+    if (p.y < -10) { p.y = H + 10; p.x = Math.random() * W; }
+    if (p.x < -10) p.x = W + 10;
+    if (p.x > W + 10) p.x = -10;
+
+    const bAlpha = p.blink
+      ? 0.3 + 0.7 * Math.abs(Math.sin(speed * Math.PI * 4 + p.phase))
+      : 0.4 + 0.5 * p.z;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r * p.z, 0, Math.PI * 2);
+    ctx.fillStyle = PALETTE.particle + (bAlpha * p.z).toFixed(3) + ')';
+    ctx.fill();
+  });
+}
+
+// ── Scanline ──
+function drawScan(t) {
+  const yS = ((t / LOOP) % 1) * (H + 200) - 100;
+  const grad = ctx.createLinearGradient(0, yS - 80, 0, yS + 80);
+  grad.addColorStop(0,   PALETTE.scan + '0)');
+  grad.addColorStop(0.4, PALETTE.scan + '0.03)');
+  grad.addColorStop(0.5, PALETTE.scan + '0.08)');
+  grad.addColorStop(0.6, PALETTE.scan + '0.03)');
+  grad.addColorStop(1,   PALETTE.scan + '0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, yS - 80, W, 160);
+}
+
+// ── Glow orb center ──
+function drawGlow(t) {
+  const pulse = 0.85 + 0.15 * Math.sin((t / LOOP) * Math.PI * 2);
+  const r = W * 0.35 * pulse;
+  const cx2 = W / 2, cy2 = H * 0.42;
+  const grad = ctx.createRadialGradient(cx2, cy2, 0, cx2, cy2, r);
+  grad.addColorStop(0,   PALETTE.glowCol + '0.09)');
+  grad.addColorStop(0.5, PALETTE.glowCol + '0.04)');
+  grad.addColorStop(1,   PALETTE.glowCol + '0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+}
+
+// ── Vignette ──
+function drawVignette() {
+  const grad = ctx.createRadialGradient(W/2, H/2, H*0.2, W/2, H/2, W*0.8);
+  grad.addColorStop(0, PALETTE.vignette + '0)');
+  grad.addColorStop(1, PALETTE.vignette + '0.75)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+}
+
+// ── Noise (subtle) ──
+function drawNoise() {
+  ctx.save();
+  ctx.globalAlpha = 0.022;
+  for (let i = 0; i < 1200; i++) {
+    const x = Math.random() * W;
+    const y = Math.random() * H;
+    const s = Math.random() * 1.5;
+    ctx.fillStyle = `rgba(255,255,255,${Math.random()})`;
+    ctx.fillRect(x, y, s, s);
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+// ── Main render ──
+function render() {
+  ctx.fillStyle = PALETTE.bg;
+  ctx.fillRect(0, 0, W, H);
+
+  drawGlow(t);
+  if (mode === 'grid') drawGrid(t);
+  else if (mode === 'hex') drawHex(t);
+  else drawDots(t);
+
+  drawParticles(t);
+  drawScan(t);
+  drawNoise();
+  drawVignette();
+
+  t = (t + 1) % LOOP;
+}
+
+// ── Animation loop ──
+let rafId;
+function loop() { render(); rafId = requestAnimationFrame(loop); }
+loop();
+
+// ── Mode buttons ──
+document.querySelectorAll('[data-mode]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    mode = btn.dataset.mode;
+    document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+// ── Recording ──
+let recorder, chunks = [], recStart, timerInterval;
+const recBtn = document.getElementById('rec-btn');
+const timerEl = document.getElementById('timer');
+
+recBtn.addEventListener('click', () => {
+  if (!recorder || recorder.state === 'inactive') {
+    chunks = [];
+    const stream = canvas.captureStream(60);
+    recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9', videoBitsPerSecond: 12e6 });
+    recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'bg-loop.webm'; a.click();
+      clearInterval(timerInterval);
+      timerEl.textContent = '0s';
+      recBtn.textContent = '⏺ Record';
+      recBtn.classList.remove('recording');
+    };
+    t = 0;
+    recorder.start();
+    recStart = Date.now();
+    timerInterval = setInterval(() => {
+      const elapsed = ((Date.now() - recStart) / 1000).toFixed(0);
+      timerEl.textContent = elapsed + 's';
+      if (elapsed >= 13) { recorder.stop(); clearInterval(timerInterval); }
+    }, 200);
+    recBtn.textContent = '⏹ Stop (auto@13s)';
+    recBtn.classList.add('recording');
+  } else if (recorder.state === 'recording') {
+    recorder.stop();
+  }
+});
+</script>

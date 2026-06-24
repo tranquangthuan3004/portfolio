@@ -1,35 +1,30 @@
 "use client";
 
 import { MouseGlow } from "@/components/mouse-glow";
-import { HeroMockup } from "@/components/hero/hero-mockup";
 import { HeroContent } from "@/components/hero/hero-content";
-import { BackgroundEffects } from "@/components/hero/background-effects";
+import { GridBackground } from "@/components/hero/grid-background";
 
 /**
  * Cinematic hero section orchestrator.
  * Full-screen, three z-layers: background → overlay → content.
- * Content is bottom-left aligned (not centered).
- * Browser mockup floats on the right side (desktop only).
+ * Content is centered.
  */
 export function HeroSection() {
   return (
     <section
       id="hero"
-      className="relative min-h-screen w-full overflow-hidden bg-black text-white"
+      className="relative min-h-screen w-full overflow-hidden bg-[#050508] text-white"
     >
-      {/* Z-0: Background effects (gradient orbs + grid + dark overlay) */}
-      <BackgroundEffects />
+      {/* Z-0: Dynamic Canvas-based Grid Background */}
+      <GridBackground />
 
       {/* Z-10: Interactive mouse glow */}
       <MouseGlow />
 
-      {/* Z-20: Content container — bottom-aligned */}
-      <div className="relative z-20 mx-auto flex min-h-screen max-w-screen-2xl flex-col justify-end px-5 pb-12 sm:px-8 md:pb-24 lg:px-10 xl:px-16">
-        {/* Hero content — bottom-left */}
+      {/* Z-20: Centered Content container */}
+      <div className="relative z-20 mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-5 py-24 text-center">
+        {/* Hero content — centered */}
         <HeroContent />
-
-        {/* Browser mockup — absolutely positioned right, desktop only */}
-        <HeroMockup />
       </div>
 
       {/* Scroll indicator */}
@@ -45,3 +40,4 @@ export function HeroSection() {
     </section>
   );
 }
+
