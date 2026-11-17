@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Thn. Portfolio
 
-## Getting Started
+Personal Software Engineer portfolio of Tran Quang Thuan. Built with Next.js 16.2.9 (root App Router), React 19.2.4 and Tailwind CSS 4.
 
-First, run the development server:
+## Current routes
 
-```bash
+| Route | Purpose |
+| --- | --- |
+| `/` | Approved Silver Editorial B2 production composition, real portrait, graduate bio, Capstone-only presentation, Light/Dark and Ink Reveal. |
+| `/preview/thn-core/visual-b` | Noindex mirror of the shared approved B2 composition. |
+| `/preview/thn-core` | Noindex CORE Fluid/ScrollSmoother baseline. |
+| `/preview/thn-core/v2` | Noindex B2 composition with refined Lenis/GSAP motion, awaiting visual approval. |
+
+V2 reuses B2 visual/content with refined motion; production remains unchanged. Arctic White 60%, Graphite Grey 30%, Arcade Orange 10% (`#FF6A13`) is a planned palette, not implemented.
+
+## Development and verification
+
+```sh
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The development server defaults to `http://localhost:3000`. Production rehearsal:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```sh
+npm run build
+npm run start -- -p 3001
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Run `npm run lint`, `npx tsc --noEmit` and `npm run build`. No test script is currently configured. After route deletion, build/type generation must refresh `.next` route types before checking TypeScript against them. Browser checks should cover B2 and retained previews, mobile 320/390px, desktop, anchors/history, project links, theme transitions, keyboard, reduced motion and V2 interaction. Functional headless checks are not real-user performance metrics.
 
-## Learn More
+## Source ownership
 
-To learn more about Next.js, take a look at the following resources:
+`app/page.tsx` renders `components/thn-portfolio/silver-editorial-portfolio.tsx`. Shared page/sections, visual wrappers, theme and motion live under `components/thn-portfolio/`; canonical content lives in `data/`, metadata in `lib/site-config.ts`, and the real portrait in `public/SE182998_1.jpg`. Old filenames such as `portrait-placeholder.tsx` and `visual-study-page.tsx` still support production.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+GSAP/ScrollTrigger orchestrate motion. Current B2 and CORE baseline use ScrollSmoother; technical V2 opts into Lenis with no competing smoother. Three.js/R3F are retained for CORE references; B2's portrait branch does not mount Canvas. Historical preview/legacy source cleanup does not authorize changing project facts or deleting canonical data.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project instructions
 
-## Deploy on Vercel
+Follow `GLOBAL_WORKING_CONTEXT.md`, `AGENTS.md`, existing `.agents/skills/`, and the current section of `docs/THN-CORE-DESIGN-BRIEF.md`. `docs/THN-CORE-DECISIONS.md` preserves scoped technical decisions; `V2_PROGRESS.md` records completed technical work. `PORTFOLIO_REDESIGN_PLAN.md` and `docs/THN-CORE-PHASE-4A.md` are historical records, not current production instructions. Keep the existing global-agent workflow.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The linked Vercel project/configuration is preserved. Do not commit, push or deploy without explicit authorization. Snapshot untracked source and Git metadata before destructive cleanup; the initial commit does not contain the approved site.

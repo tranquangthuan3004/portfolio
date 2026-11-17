@@ -1,0 +1,27 @@
+# Runtime and generated output
+.git
+**/.git
+node_modules
+**/node_modules
+.next
+**/.next
+out
+coverage
+*.tsbuildinfo
+
+# Credentials and deployment metadata
+.env*
+**/.env*
+.vercel
+**/.vercel
+
+# Local agent instructions and private planning context
+.agents
+**/.agents
+AGENTS.md
+**/AGENTS.md
+CLAUDE.md
+**/CLAUDE.md
+GLOBAL_WORKING_CONTEXT.md
+PORTFOLIO_REDESIGN_PLAN.md
+skills-lock.json

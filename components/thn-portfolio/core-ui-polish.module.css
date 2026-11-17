@@ -1,0 +1,111 @@
+.root {
+  min-width: 0;
+}
+
+.root[data-thn-motion-profile="refined"] :global(#hero [data-thn-premium-stage]:has(> [data-thn-premium-light])) {
+  background:
+    radial-gradient(ellipse 42% 38% at 52% 38%, rgb(217 220 222 / 52%), transparent 74%),
+    radial-gradient(ellipse 64% 43% at 51% 68%, rgb(242 243 244 / 94%), transparent 78%);
+}
+
+.root[data-thn-motion-profile="refined"] :global(#work [data-thn-project-row]:hover h3),
+.root[data-thn-motion-profile="refined"] :global(#work [data-thn-project-row]:focus-within h3) {
+  transform: translateX(10px);
+}
+
+.smoothContent {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  margin-top: calc(-1 * (var(--thn-header-height) + var(--thn-rule-width)));
+  padding-top: calc(var(--thn-header-height) + var(--thn-rule-width));
+}
+
+.root :global(#main-content) {
+  scroll-margin-top: var(--thn-anchor-offset);
+}
+
+.root :global(#process > div > div:first-child) {
+  width: 100%;
+  max-width: none;
+  text-align: center;
+}
+
+.root :global(#process [data-thn-process-heading]) {
+  max-width: none;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+@media (min-width: 821px) {
+  .root :global(#process > div) {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: clamp(32px, 5vw, 72px);
+  }
+
+  .root :global(#process > div > div:nth-child(2)) {
+    width: 100%;
+  }
+
+  .root :global(#process ol) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(44px, 5vw, 64px) minmax(0, 1fr);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .root :global(#process [aria-hidden="true"]:first-child),
+  .root :global(#process [data-thn-process-progress]) {
+    left: 50%;
+    margin-left: -0.5px;
+  }
+
+  .root :global(#process ol > li) {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    align-items: start;
+    column-gap: clamp(16px, 2vw, 28px);
+    min-width: 0;
+    padding: clamp(24px, 3vw, 38px) 0;
+  }
+
+  .root :global(#process ol > li:first-child) {
+    padding-top: 0;
+  }
+
+  .root :global(#process ol > li [data-thn-process-number]) {
+    z-index: 1;
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    justify-self: center;
+    padding: 0 8px;
+    background: var(--thn-ink);
+  }
+
+  .root :global(#process ol > li:nth-child(odd) h4),
+  .root :global(#process ol > li:nth-child(odd) p) {
+    grid-column: 1;
+    justify-self: end;
+    text-align: right;
+  }
+
+  .root :global(#process ol > li:nth-child(even) h4),
+  .root :global(#process ol > li:nth-child(even) p) {
+    grid-column: 3;
+    justify-self: start;
+    text-align: left;
+  }
+
+  .root :global(#process ol > li h4) {
+    grid-row: 1;
+    max-width: 22ch;
+  }
+
+  .root :global(#process ol > li p) {
+    grid-row: 2;
+    max-width: 42ch;
+    margin-top: 8px;
+  }
+}

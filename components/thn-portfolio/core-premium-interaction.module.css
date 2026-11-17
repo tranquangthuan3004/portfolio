@@ -1,0 +1,24 @@
+.root {
+  --thn-motion-fast: 300ms;
+  --thn-ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.root :global([data-thn-project-row]:focus-visible) {
+  outline-offset: 5px;
+}
+
+.root :global([data-thn-primary-action] [aria-hidden="true"]) {
+  display: inline-block;
+  transition: transform var(--thn-motion-fast) var(--thn-ease-standard);
+}
+
+.root :global([data-thn-primary-action]:hover [aria-hidden="true"]),
+.root :global([data-thn-primary-action]:focus-visible [aria-hidden="true"]) {
+  transform: translateY(3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root :global([data-thn-primary-action] [aria-hidden="true"]) {
+    transition: none;
+  }
+}

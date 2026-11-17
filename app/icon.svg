@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Thn.">
+  <rect width="64" height="64" fill="#fff"/>
+  <text x="1" y="51" fill="#111" font-family="Georgia, 'Times New Roman', serif" font-size="55" font-weight="700" letter-spacing="-5">T</text>
+  <text x="29" y="47" fill="#111" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="600" letter-spacing="-3">hn</text>
+  <circle cx="61" cy="49" r="2" fill="#111"/>
+</svg>

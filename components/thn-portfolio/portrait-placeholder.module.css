@@ -1,0 +1,133 @@
+.placeholder {
+  position: absolute;
+  inset: clamp(10px, 1.5vw, 20px);
+  overflow: hidden;
+  border: 1px solid var(--thn-rule, #c9c7c1);
+  background: var(--thn-mist, #e7e5df);
+}
+
+.paper,
+.image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.paper {
+  display: block;
+  background: var(--thn-mist, #e7e5df);
+}
+
+.image {
+  object-fit: cover;
+  object-position: center 55%;
+}
+
+.label {
+  position: absolute;
+  right: 12px;
+  bottom: 16px;
+  left: auto;
+  width: max-content;
+  max-width: calc(100% - 24px);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  border: 1px solid var(--thn-rule, #c9c7c1);
+  padding: 7px 9px;
+  background: var(--thn-surface, #f3f1ec);
+  color: var(--thn-muted, #686a6d);
+  font-size: 11px;
+  font-weight: 550;
+  letter-spacing: 0.085em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.label::before {
+  width: 22px;
+  height: 2px;
+  flex: 0 0 auto;
+  background: var(--thn-action, #2859bd);
+  content: "";
+}
+
+@media (max-width: 820px) {
+  .placeholder {
+    inset: 8px;
+  }
+
+  .label {
+    right: 8px;
+    bottom: 8px;
+    left: auto;
+    max-width: calc(100% - 16px);
+    gap: 6px;
+    padding: 6px 7px;
+    font-size: 10px;
+  }
+
+  .label::before {
+    width: 18px;
+  }
+}
+
+@media (max-width: 600px) {
+  .label {
+    display: grid;
+    grid-template-columns: 12px minmax(0, 1fr);
+    row-gap: 2px;
+    column-gap: 4px;
+    align-content: center;
+    padding: 5px;
+  }
+
+  .label::before {
+    width: 12px;
+  }
+
+  .label > span > span[aria-hidden="true"] {
+    display: none;
+  }
+
+  .label::before {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: center;
+  }
+
+  .label > span:first-child {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .label > span:last-child {
+    grid-column: 2;
+    grid-row: 2;
+    white-space: nowrap;
+  }
+
+  .label > span:only-child {
+    grid-row: 1 / span 2;
+    align-self: center;
+  }
+}
+
+@media (max-width: 359px) {
+  .label {
+    right: 5px;
+    bottom: 5px;
+    left: auto;
+    max-width: calc(100% - 10px);
+    gap: 4px;
+    padding: 7px 5px;
+    font-size: 9px;
+    grid-template-columns: 14px minmax(0, 1fr);
+  }
+
+  .label::before {
+    width: 14px;
+  }
+}

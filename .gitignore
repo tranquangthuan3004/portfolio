@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local review recordings (not application assets)
+/*.mp4
+/*.webm

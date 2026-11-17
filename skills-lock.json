@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "frontend-design": {
+      "source": "PaulRBerg/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "computedHash": "6f30deac4eddb58d735fc7874eec6d4cc52bc359f77d03b5f3f7a1471f929c99"
+    }
+  }
+}
