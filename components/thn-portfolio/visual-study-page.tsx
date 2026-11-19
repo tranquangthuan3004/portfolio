@@ -5,7 +5,6 @@ import ThnPortfolioPage from "./portfolio-page";
 import { CorePremiumContentWrapper } from "./core-premium-preview";
 import CoreFluidHero, { type CoreHeroIdentityCopy } from "./core-hero";
 import EngineeredFlowHero from "./engineered-flow-hero";
-import EngineeredFlow from "./engineered-flow";
 import {
   MonochromeVisualStudy,
   SilverVisualStudy,
@@ -52,7 +51,6 @@ export default function ThnCoreVisualStudy({
       profile="core"
       projectIds={projectIds}
       headerAction={headerAction}
-      backgroundVisual={refinedMotion ? <div data-thn-flow-background="" aria-hidden="true"><EngineeredFlow persistent /></div> : undefined}
       motionWrapper={MotionWrapper}
       contentWrapper={CorePremiumContentWrapper}
       heroComposition={refinedMotion ? <EngineeredFlowHero identityCopy={identityCopy} /> : (

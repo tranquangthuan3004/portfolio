@@ -388,7 +388,7 @@ export async function mountCorePremiumMotion(
       targets: HTMLElement[],
       preset: HeadingPreset,
       supportTargets: HTMLElement[] = [],
-      entry: { viewport?: number; supportAt?: number } = {},
+      entry: { viewport?: number; supportAt?: number; wheelDelay?: number } = {},
     ): TypographyReveal | null => {
       if (!targets.length) return null;
       const view = root.ownerDocument.defaultView;
@@ -497,7 +497,7 @@ export async function mountCorePremiumMotion(
         timeline.pause();
         timeline.progress(1, false);
       };
-      const schedule = (delay: number = typography.wheelDelay, onStart?: () => void) => {
+      const schedule = (delay: number = entry.wheelDelay ?? typography.wheelDelay, onStart?: () => void) => {
         if (state !== "idle") {
           onStart?.();
           return;
@@ -630,6 +630,11 @@ export async function mountCorePremiumMotion(
         aboutLines,
         "maskedLine",
         aboutSupport ? [aboutSupport] : [],
+        // Start while the heading is readable near the lower viewport edge.
+        // Anchor navigation still supplies its independent post-arrival delay.
+        root.hasAttribute("data-thn-flow-story")
+          ? { viewport: compactLayout ? 0.84 : hero?.hasAttribute("data-thn-engineered-identity") ? 0.8 : 0.88 }
+          : {},
       );
       if (reveal) anchorTypography.set("about", reveal);
     }
@@ -657,11 +662,13 @@ export async function mountCorePremiumMotion(
         lastProgress: null,
       });
     };
+    let refreshEngineeredScene = () => {};
     refreshScrollRanges = () => {
       const view = root.ownerDocument.defaultView;
       if (!view) return;
       const visualScrollY = scrollOwnerRef.current?.scrollTop() ?? view.scrollY;
 
+      refreshEngineeredScene();
       scrollRanges.forEach((range) => {
         const startRect = range.startElement.getBoundingClientRect();
         const endRect = range.endElement.getBoundingClientRect();
@@ -684,6 +691,84 @@ export async function mountCorePremiumMotion(
         range.timeline.progress(progress, false);
       });
     };
+
+    const origin = hero?.querySelector<HTMLElement>("[data-thn-engineered-origin]");
+    const plate = origin?.querySelector<HTMLElement>("[data-thn-engineered-plate]");
+    if (hero && about && origin && plate) {
+      const shell = plate.querySelector("[data-thn-engineered-shell]");
+      const ring = plate.querySelector("[data-thn-engineered-ring]");
+      const aperture = plate.querySelector("[data-thn-engineered-aperture]");
+      const signal = plate.querySelector("[data-thn-engineered-signal]");
+      const pointer = plate.querySelector("[data-thn-engineered-pointer]");
+      const arrival = gsap.timeline({ paused: true });
+      let destination = { x: 0, y: 0, scale: 1 };
+      arrival.fromTo(plate, { x: 0, y: 0, scale: 1 }, {
+        x: () => destination.x, scale: () => destination.scale,
+        duration: compactLayout ? 1 : .76, ease: "power2.inOut",
+      }, 0);
+      arrival.fromTo(plate, { y: 0 }, {
+        y: () => destination.y, duration: 1, ease: "power2.inOut",
+      }, 0);
+      arrival.fromTo(shell, { attr: { d: shell?.getAttribute("d") ?? "" } }, { attr: { d: "M200 20 C299 20 345 20 345 200 C345 380 299 380 200 380 C101 380 55 380 55 200 C55 20 101 20 200 20Z" }, duration: 1, ease: "power2.inOut" }, 0);
+      arrival.fromTo(signal, { attr: { d: signal?.getAttribute("d") ?? "" } }, {
+        attr: { d: "M200 20C299 20 345 20 345 200M55 200C55 157 55 118 61 87" }, duration: 1, ease: "power2.inOut",
+      }, 0);
+      arrival.fromTo(aperture, { clipPath: "inset(8% 0% round 49%)" }, { clipPath: "inset(0% 0% round 3%)", duration: 1 }, 0);
+      arrival.fromTo(ring, { opacity: 1 }, { opacity: .15, duration: 1 }, 0);
+      addScrollRange(arrival, hero, "bottom", compactLayout ? .9 : 1.04, about, "top", compactLayout ? .12 : .52);
+      let pointerLeft = 0;
+      let pointerWidth = 1;
+      refreshEngineeredScene = () => {
+        const start = origin.getBoundingClientRect();
+        pointerLeft = start.left;
+        pointerWidth = Math.max(1, start.width);
+        const end = about.getBoundingClientRect();
+        const mobile = root.ownerDocument.defaultView!.innerWidth <= 820;
+        destination = {
+          x: end.left + end.width * (mobile ? .5 : .23) - (start.left + start.width / 2),
+          y: end.top + (mobile ? 105 : end.height / 2) - (start.top + start.height / 2),
+          scale: mobile ? .58 : .73,
+        };
+        arrival.invalidate();
+        scrollRanges.find(range => range.timeline === arrival)!.lastProgress = null;
+      };
+      gsap.fromTo(signal, { strokeDashoffset: 150 }, {
+        strokeDashoffset: 0, duration: 1.1, ease: "power3.out", clearProps: "strokeDashoffset",
+      });
+      if (pointer && !compactLayout) {
+        const turn = gsap.quickTo(pointer, "rotation", { duration: .65, ease: "power3.out", svgOrigin: "200 200" });
+        const move = (event: PointerEvent) => {
+          if (event.pointerType !== "mouse") return;
+          turn(gsap.utils.clamp(-12, 12, (event.clientX - pointerLeft) / pointerWidth * 24 - 12));
+        };
+        const leave = () => { turn(0); };
+        hero.addEventListener("pointermove", move, { passive: true });
+        hero.addEventListener("pointerleave", leave);
+        context.add(() => () => {
+          hero.removeEventListener("pointermove", move);
+          hero.removeEventListener("pointerleave", leave);
+          turn.tween.kill();
+        });
+      }
+      for (const id of ["expertise", "stack", "process", "work"]) {
+        const section = root.querySelector<HTMLElement>(`#${id}`);
+        if (!section) continue;
+        const rules = gsap.timeline({ paused: true }).fromTo(section,
+          { "--thn-engraved-progress": 0 },
+          { "--thn-engraved-progress": 1, duration: 1, ease: "power2.out" });
+        const isAboutBoundary = id === "expertise";
+        addScrollRange(rules, section, "top", isAboutBoundary ? 1 : .92, section, "top", isAboutBoundary ? .7 : .48);
+      }
+    }
+
+    const emailAction = origin && root.querySelector<HTMLElement>('#contact [data-thn-contact-rail] > a[href^="mailto:"]');
+    if (emailAction) {
+      const trace = gsap.timeline({ paused: true }).fromTo(emailAction,
+        { "--thn-email-trace": 0 },
+        { "--thn-email-trace": 1, duration: 1, ease: "power2.out" },
+      );
+      addScrollRange(trace, emailAction, "top", .94, emailAction, "top", .65);
+    }
 
     // Keep scroll depth and pointer response on separate inner portrait layers.
     const portraitDepth = motionProfile === "refined"
@@ -786,6 +871,7 @@ export async function mountCorePremiumMotion(
         [expertiseHeading],
         "left",
         support instanceof HTMLElement ? [support] : [],
+        origin ? { viewport: .96, wheelDelay: .12 } : {},
       );
       if (reveal) anchorTypography.set("expertise", reveal);
     }
@@ -814,8 +900,9 @@ export async function mountCorePremiumMotion(
       const groups = toolGroups ? Array.from(toolGroups) : [];
       const reveal = addHeadingEntry("stack", toolsLead, [toolsLead], "bottom", groups,
         motionProfile === "refined" ? {
-          viewport: compactLayout ? REFINED_HANDOFF.compactEntryViewport : REFINED_HANDOFF.entryViewport,
-          supportAt: REFINED_HANDOFF.supportAt,
+          viewport: origin ? .96 : compactLayout ? REFINED_HANDOFF.compactEntryViewport : REFINED_HANDOFF.entryViewport,
+          supportAt: origin ? .14 : REFINED_HANDOFF.supportAt,
+          wheelDelay: origin ? .12 : undefined,
         } : {},
       );
       if (reveal) anchorTypography.set("stack", reveal);
