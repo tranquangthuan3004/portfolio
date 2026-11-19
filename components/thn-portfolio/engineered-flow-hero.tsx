@@ -25,7 +25,7 @@ export default function EngineeredFlowHero({ identityCopy }: { identityCopy?: Co
             </g>
           </svg>
           <div data-thn-engineered-aperture="">
-            <Image src="/SE182998_1.jpg" alt="Tran Quang Thuan at his FPT University graduation ceremony" fill sizes="(max-width: 820px) 45vw, 400px" />
+            <Image src="/SE182998_1.jpg" alt="Tran Quang Thuan at his FPT University graduation ceremony" fill loading="eager" sizes="(max-width: 820px) 45vw, 400px" />
           </div>
         </figure>
       </div>

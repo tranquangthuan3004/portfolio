@@ -7,7 +7,7 @@ function VisualBThemeBootstrap() {
     <script
       id="thn-visual-b-theme-bootstrap"
       dangerouslySetInnerHTML={{
-        __html: `(()=>{const path="/"+location.pathname.split("/").filter(Boolean).join("/");if(path!=="/"&&path!=="/preview/thn-core/visual-b"&&path!=="/preview/thn-core/v2")return;try{if(localStorage.getItem("thn-core-visual-b-theme")==="dark"){const root=document.querySelector("[data-thn-preview]");if(root)root.dataset.thnVisualBTheme="dark"}}catch{}})()`,
+        __html: `(()=>{const path="/"+location.pathname.split("/").filter(Boolean).join("/");if(path!=="/")return;try{if(localStorage.getItem("thn-core-visual-b-theme")==="dark"){const root=document.querySelector("[data-thn-preview]");if(root)root.dataset.thnVisualBTheme="dark"}}catch{}})()`,
       }}
     />
   );
